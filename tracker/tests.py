@@ -1,14 +1,4 @@
-"""
-tests.py — Enhanced unit tests for v2 of Smart Mental Health Monitoring System.
-Covers:
-  - Predictor with all 16 new features
-  - Form validation (new fields)
-  - Edit (update) functionality
-  - DB storage of new fields
-  - Depression risk detection
-
-Run: python manage.py test tracker
-"""
+"""Tests for prediction, forms, auth, entries, and model helpers."""
 
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
@@ -20,12 +10,8 @@ from .forms import MoodEntryForm
 from .ml.predictor import predict_stress
 
 
-# ─────────────────────────────────────────────
-# BASE DATA HELPER
-# ─────────────────────────────────────────────
-
 def full_form_data(**overrides):
-    """Return a complete valid form POST dict (all 15 fields)."""
+    """Return valid POST data for the mood form."""
     base = {
         'mood_score':          7,
         'sleep_hours':         7.0,
@@ -48,10 +34,6 @@ def full_form_data(**overrides):
     base.update(overrides)
     return base
 
-
-# ─────────────────────────────────────────────
-# 1. PREDICTOR TESTS
-# ─────────────────────────────────────────────
 
 class PredictorTests(TestCase):
 
@@ -102,7 +84,7 @@ class PredictorTests(TestCase):
                       anxiety=6, energy=5)
         with_exercise    = predict_stress(**kwargs, physical_activity=True)
         without_exercise = predict_stress(**kwargs, physical_activity=False)
-        # Both should return valid results
+        # We only need both calls to stay in the valid risk range.
         self.assertIn(with_exercise['burnout_risk'],    ['Low', 'Medium', 'High'])
         self.assertIn(without_exercise['burnout_risk'], ['Low', 'Medium', 'High'])
 
@@ -127,10 +109,6 @@ class PredictorTests(TestCase):
         joined = ' '.join(result['recommendations'])
         self.assertIn('social', joined.lower())
 
-
-# ─────────────────────────────────────────────
-# 2. FORM VALIDATION TESTS
-# ─────────────────────────────────────────────
 
 class MoodEntryFormTests(TestCase):
 
@@ -168,18 +146,14 @@ class MoodEntryFormTests(TestCase):
         self.assertFalse(form.is_valid())
 
     def test_boolean_depression_fields_default_false(self):
-        """Unchecked checkboxes should default to False (not raise errors)."""
+        """Unchecked checkboxes should validate as False."""
         data = full_form_data()
-        # Remove checkbox keys (simulates unchecked)
+        # Browsers omit unchecked checkboxes from POST data.
         for key in ['physical_activity','feeling_hopeless','loss_of_interest','feeling_tired','trouble_sleeping']:
             data.pop(key, None)
         form = MoodEntryForm(data=data)
         self.assertTrue(form.is_valid(), form.errors)
 
-
-# ─────────────────────────────────────────────
-# 3. AUTHENTICATION TESTS
-# ─────────────────────────────────────────────
 
 class AuthTests(TestCase):
 
@@ -202,10 +176,6 @@ class AuthTests(TestCase):
         r = self.client.get(reverse('dashboard'))
         self.assertRedirects(r, '/login/?next=/dashboard/')
 
-
-# ─────────────────────────────────────────────
-# 4. MOOD ENTRY — CREATE
-# ─────────────────────────────────────────────
 
 class MoodEntryCreateTests(TestCase):
 
@@ -251,10 +221,6 @@ class MoodEntryCreateTests(TestCase):
         self.assertIn(pred.stress_category, ['Low','Medium','High'])
 
 
-# ─────────────────────────────────────────────
-# 5. MOOD ENTRY — EDIT (UPDATE)
-# ─────────────────────────────────────────────
-
 class MoodEntryEditTests(TestCase):
 
     def setUp(self):
@@ -263,7 +229,7 @@ class MoodEntryEditTests(TestCase):
         UserProfile.objects.get_or_create(user=self.user)
         self.client.login(username='u2', password='Pass123!')
         today = timezone.localdate()
-        # Pre-create today's entry
+        # Set up an entry so /entry/ opens in edit mode.
         self.entry = MoodEntry.objects.create(
             user=self.user,
             mood_score=5, sleep_hours=6, work_hours=8,
@@ -277,19 +243,19 @@ class MoodEntryEditTests(TestCase):
         )
 
     def test_get_entry_page_shows_edit_mode(self):
-        """GET /entry/ when entry exists → is_edit=True, form pre-filled."""
+        """Existing entries should put the form in edit mode."""
         r = self.client.get(reverse('mood_entry'))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.context['is_edit'])
         self.assertEqual(r.context['existing_entry'].pk, self.entry.pk)
 
     def test_edit_updates_existing_entry(self):
-        """POST to /entry/ when entry exists → updates the same record (no duplicate)."""
+        """Editing should update the same entry."""
         self.client.post(reverse('mood_entry'), full_form_data(
             mood_score=9, anxiety_level=2, energy_level=9,
             physical_activity=True, feeling_hopeless=False,
         ))
-        # Still only 1 MoodEntry for today
+        # There should still be only one entry for today.
         count = MoodEntry.objects.filter(user=self.user, entry_date=timezone.localdate()).count()
         self.assertEqual(count, 1)
 
@@ -300,8 +266,8 @@ class MoodEntryEditTests(TestCase):
         self.assertTrue(self.entry.physical_activity)
 
     def test_edit_updates_prediction_not_creates_new(self):
-        """Editing should update PredictionResult, not create a duplicate."""
-        # Create initial prediction
+        """Editing should keep one prediction for the entry."""
+        # Start with an existing prediction.
         PredictionResult.objects.create(
             mood_entry=self.entry, user=self.user,
             stress_category='High', burnout_risk='High',
@@ -310,13 +276,13 @@ class MoodEntryEditTests(TestCase):
         )
         self.client.post(reverse('mood_entry'), full_form_data(mood_score=9))
 
-        # Still exactly 1 prediction for this entry
+        # The edit should not add another prediction row.
         pred_count = PredictionResult.objects.filter(mood_entry=self.entry).count()
         self.assertEqual(pred_count, 1)
 
     def test_edit_recalculates_prediction(self):
-        """After edit with better values, prediction should change."""
-        # First create with bad values
+        """Editing should leave the prediction in a valid state."""
+        # First save a rough day.
         self.client.post(reverse('mood_entry'), full_form_data(
             mood_score=2, sleep_hours=3, work_hours=13, self_stress_level=9,
             anxiety_level=9, energy_level=1,
@@ -326,7 +292,7 @@ class MoodEntryEditTests(TestCase):
         pred_after_bad = PredictionResult.objects.get(mood_entry=self.entry)
         bad_stress = pred_after_bad.stress_category
 
-        # Now edit with good values
+        # Then save a better day.
         self.client.post(reverse('mood_entry'), full_form_data(
             mood_score=9, sleep_hours=8, work_hours=4, self_stress_level=2,
             anxiety_level=1, energy_level=9, physical_activity=True,
@@ -334,10 +300,6 @@ class MoodEntryEditTests(TestCase):
         pred_after_good = PredictionResult.objects.get(mood_entry=self.entry)
         self.assertIn(pred_after_good.stress_category, ['Low', 'Medium', 'High'])
 
-
-# ─────────────────────────────────────────────
-# 6. MODEL TESTS
-# ─────────────────────────────────────────────
 
 class ModelTests(TestCase):
 

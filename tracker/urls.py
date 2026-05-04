@@ -7,7 +7,7 @@ urlpatterns = [
     path('login/',        views.login_view,           name='login'),
     path('logout/',       views.logout_view,          name='logout'),
     path('dashboard/',    views.dashboard_view,       name='dashboard'),
-    # Single URL handles both CREATE and EDIT — view detects which automatically
+    # The entry view decides whether today is a new entry or an edit.
     path('entry/',        views.mood_entry_view,      name='mood_entry'),
     path('result/<int:pk>/', views.result_view,       name='result'),
     path('history/',      views.history_view,         name='history'),

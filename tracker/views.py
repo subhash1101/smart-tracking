@@ -1,12 +1,4 @@
-"""
-views.py — Enhanced Smart Mental Health Monitoring System
-
-New in v2:
-  - mood_entry_view : CREATE new entry OR EDIT today's existing entry (smart detection)
-  - result_view     : now shows depression risk too
-  - dashboard_view  : adds anxiety + energy to chart data
-  - All ML calls pass all 16 new features
-"""
+"""Views for the public page, auth, mood entries, and reports."""
 
 import json
 from datetime import timedelta
@@ -23,19 +15,11 @@ from .forms import UserRegistrationForm, LoginForm, MoodEntryForm
 from .ml.predictor import predict_stress
 
 
-# ═════════════════════════════════════════════
-# HOME
-# ═════════════════════════════════════════════
-
 def home_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
     return render(request, 'tracker/home.html')
 
-
-# ═════════════════════════════════════════════
-# AUTHENTICATION
-# ═════════════════════════════════════════════
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -84,34 +68,19 @@ def logout_view(request):
     return redirect('login')
 
 
-# ═════════════════════════════════════════════
-# MOOD ENTRY — CREATE or EDIT
-# ═════════════════════════════════════════════
-
 @login_required
 def mood_entry_view(request):
-    """
-    Smart CREATE / EDIT view.
-
-    Logic:
-        1. Check if today's MoodEntry exists for this user.
-        2. If YES  → pre-fill form with existing data → UPDATE on submit.
-        3. If NO   → show empty form → CREATE on submit.
-
-    After save:
-        - Run ML prediction (create or update PredictionResult).
-        - Redirect to result page.
-    """
+    """Create today's entry, or update it if the user already filled it in."""
     today = timezone.localdate()
     existing_entry = MoodEntry.objects.filter(user=request.user, entry_date=today).first()
     is_edit = existing_entry is not None
 
     if request.method == 'POST':
         if is_edit:
-            # EDIT: bind POST data to the existing instance
+            # Update today's existing entry.
             form = MoodEntryForm(request.POST, instance=existing_entry)
         else:
-            # CREATE: new instance
+            # Start a fresh entry for today.
             form = MoodEntryForm(request.POST)
 
         if form.is_valid():
@@ -119,12 +88,12 @@ def mood_entry_view(request):
             entry.user = request.user
             entry.save()
 
-            # Build kwargs for predictor from the saved entry
+            # Re-run prediction from the saved answers.
             pred_kwargs = _entry_to_pred_kwargs(entry)
             result = predict_stress(**pred_kwargs)
 
             if is_edit:
-                # UPDATE existing prediction
+                # Keep one prediction row per entry.
                 pred_obj, _ = PredictionResult.objects.get_or_create(
                     mood_entry=entry,
                     defaults={'user': request.user}
@@ -139,7 +108,7 @@ def mood_entry_view(request):
                 pred_obj.save()
                 messages.success(request, "✅ Today's entry has been updated! Your new report is ready.")
             else:
-                # CREATE new prediction
+                # Store the first prediction for this entry.
                 pred_obj = PredictionResult.objects.create(
                     mood_entry=entry,
                     user=request.user,
@@ -157,7 +126,7 @@ def mood_entry_view(request):
         messages.error(request, "Please fix the errors highlighted below.")
 
     else:
-        # GET request
+        # Show the right form state on page load.
         if is_edit:
             form = MoodEntryForm(instance=existing_entry)
         else:
@@ -172,7 +141,7 @@ def mood_entry_view(request):
 
 
 def _entry_to_pred_kwargs(entry) -> dict:
-    """Convert a MoodEntry ORM object into keyword args for predict_stress()."""
+    """Convert a saved entry into predictor keyword arguments."""
     return dict(
         mood               = entry.mood_score,
         sleep              = entry.sleep_hours,
@@ -193,13 +162,9 @@ def _entry_to_pred_kwargs(entry) -> dict:
     )
 
 
-# ═════════════════════════════════════════════
-# RESULT
-# ═════════════════════════════════════════════
-
 @login_required
 def result_view(request, pk):
-    """Show prediction result — stress + burnout + depression + recommendations."""
+    """Show the prediction result for one saved entry."""
     prediction = get_object_or_404(PredictionResult, pk=pk, user=request.user)
     return render(request, 'tracker/result.html', {
         'prediction':    prediction,
@@ -207,10 +172,6 @@ def result_view(request, pk):
         'recommendations': prediction.get_recommendations_list(),
     })
 
-
-# ═════════════════════════════════════════════
-# DASHBOARD
-# ═════════════════════════════════════════════
 
 @login_required
 def dashboard_view(request):
@@ -224,7 +185,7 @@ def dashboard_view(request):
         .first()
     )
 
-    # 7-day trend data for Chart.js
+    # Build the week-long line chart data.
     last_7 = []
     for i in range(6, -1, -1):
         day   = today - timedelta(days=i)
@@ -245,7 +206,7 @@ def dashboard_view(request):
     anxiety_data  = json.dumps([d['anxiety'] for d in last_7])
     energy_data   = json.dumps([d['energy']  for d in last_7])
 
-    # Stress distribution pie (last 30 days)
+    # Count stress levels for the last 30 days.
     last_30 = PredictionResult.objects.filter(
         user=user, predicted_at__date__gte=today - timedelta(days=30)
     )
@@ -256,7 +217,7 @@ def dashboard_view(request):
     }
     stress_pie_data = json.dumps(list(stress_counts.values()))
 
-    # Depression distribution pie (last 30 days)
+    # Count depression risk levels for the last 30 days.
     dep_counts = {
         'Low':    last_30.filter(depression_risk='Low').count(),
         'Medium': last_30.filter(depression_risk='Medium').count(),
@@ -298,19 +259,11 @@ def dashboard_view(request):
     })
 
 
-# ═════════════════════════════════════════════
-# HISTORY
-# ═════════════════════════════════════════════
-
 @login_required
 def history_view(request):
     entries = MoodEntry.objects.filter(user=request.user).select_related('prediction')
     return render(request, 'tracker/history.html', {'entries': entries})
 
-
-# ═════════════════════════════════════════════
-# WEEKLY SUMMARY
-# ═════════════════════════════════════════════
 
 @login_required
 def weekly_summary_view(request):

@@ -2,7 +2,7 @@
 {% block title %}Dashboard — MindTrack{% endblock %}
 
 {% block content %}
-<!-- Page Header -->
+<!-- Page header -->
 <div class="page-header d-flex justify-content-between align-items-start">
     <div>
         <h2>Your Dashboard</h2>
@@ -17,7 +17,7 @@
     </a>
 </div>
 
-<!-- STAT CARDS -->
+<!-- Stat cards -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md">
         <div class="stat-card" style="background:linear-gradient(135deg,#667eea,#764ba2);">
@@ -71,16 +71,16 @@
     </div>
 </div>
 
-<!-- CHARTS ROW 1 -->
+<!-- First chart row -->
 <div class="row g-3 mb-3">
-    <!-- Mood & Stress 7-day -->
+    <!-- Mood and stress chart -->
     <div class="col-md-8">
         <div class="card h-100">
             <div class="card-header bg-white"><i class="bi bi-graph-up me-2 text-primary"></i><strong>Mood & Stress — 7 Days</strong></div>
             <div class="card-body"><canvas id="moodStressChart" height="130"></canvas></div>
         </div>
     </div>
-    <!-- Stress Pie -->
+    <!-- Stress chart -->
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header bg-white"><i class="bi bi-pie-chart me-2 text-primary"></i><strong>Stress Distribution (30d)</strong></div>
@@ -96,16 +96,16 @@
     </div>
 </div>
 
-<!-- CHARTS ROW 2 -->
+<!-- Second chart row -->
 <div class="row g-3 mb-4">
-    <!-- Anxiety & Energy 7-day -->
+    <!-- Anxiety and energy chart -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-white"><i class="bi bi-activity me-2 text-primary"></i><strong>Anxiety & Energy — 7 Days</strong></div>
             <div class="card-body"><canvas id="anxietyEnergyChart" height="130"></canvas></div>
         </div>
     </div>
-    <!-- Sleep bar -->
+    <!-- Sleep chart -->
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-white"><i class="bi bi-moon-stars me-2 text-primary"></i><strong>Sleep Hours — 7 Days</strong></div>
@@ -114,7 +114,7 @@
     </div>
 </div>
 
-<!-- Depression Pie + Recent Table -->
+<!-- Depression chart and recent entries -->
 <div class="row g-3 mb-4">
     <div class="col-md-3">
         <div class="card h-100">

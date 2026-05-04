@@ -3,7 +3,7 @@
 
 {% block extra_head %}
 <style>
-/* Section card styling */
+/* Section cards */
 .section-card {
     border: none;
     border-radius: 16px;
@@ -22,7 +22,7 @@
 }
 .section-body { padding: 24px; background: white; }
 
-/* Slider styling */
+/* Sliders */
 .slider-wrap {
     display: flex;
     align-items: center;
@@ -43,7 +43,7 @@
     border-radius: 8px;
     padding: 2px 6px;
 }
-/* Checkbox card */
+/* Checkbox cards */
 .check-card {
     display: flex;
     align-items: flex-start;
@@ -103,9 +103,7 @@
 <div class="alert alert-danger">{{ form.non_field_errors }}</div>
 {% endif %}
 
-<!-- ════════════════════════════════════════ -->
-<!-- SECTION 1 — BASIC HEALTH               -->
-<!-- ════════════════════════════════════════ -->
+<!-- Basic health section -->
 <div class="section-card">
     <div class="section-header" style="background: linear-gradient(135deg,#667eea,#764ba2);">
         <span>🏥</span> Section 1 — Basic Health
@@ -113,7 +111,7 @@
     <div class="section-body">
         <div class="row g-4">
 
-            <!-- Mood Score -->
+            <!-- Mood score -->
             <div class="col-md-6">
                 <label class="form-label fw-bold">{{ form.mood_score.label }}</label>
                 <div class="slider-wrap">
@@ -128,7 +126,7 @@
                 {% if form.mood_score.errors %}<div class="text-danger small">{{ form.mood_score.errors }}</div>{% endif %}
             </div>
 
-            <!-- Self Stress -->
+            <!-- Self-reported stress -->
             <div class="col-md-6">
                 <label class="form-label fw-bold">{{ form.self_stress_level.label }}</label>
                 <div class="slider-wrap">
@@ -143,7 +141,7 @@
                 {% if form.self_stress_level.errors %}<div class="text-danger small">{{ form.self_stress_level.errors }}</div>{% endif %}
             </div>
 
-            <!-- Sleep Hours -->
+            <!-- Sleep hours -->
             <div class="col-md-6">
                 <label class="form-label fw-bold">{{ form.sleep_hours.label }}</label>
                 {{ form.sleep_hours }}
@@ -151,7 +149,7 @@
                 {% if form.sleep_hours.errors %}<div class="text-danger small">{{ form.sleep_hours.errors }}</div>{% endif %}
             </div>
 
-            <!-- Work Hours -->
+            <!-- Work hours -->
             <div class="col-md-6">
                 <label class="form-label fw-bold">{{ form.work_hours.label }}</label>
                 {{ form.work_hours }}
@@ -163,9 +161,7 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════════ -->
-<!-- SECTION 2 — MENTAL STATE               -->
-<!-- ════════════════════════════════════════ -->
+<!-- Mental state section -->
 <div class="section-card">
     <div class="section-header" style="background: linear-gradient(135deg,#43e97b,#38f9d7); color:#1a4731;">
         <span>🧠</span> Section 2 — Mental State
@@ -173,7 +169,7 @@
     <div class="section-body">
         <div class="row g-4">
 
-            <!-- Anxiety Level -->
+            <!-- Anxiety level -->
             <div class="col-md-6">
                 <label class="form-label fw-bold">{{ form.anxiety_level.label }}</label>
                 <div class="slider-wrap">
@@ -188,7 +184,7 @@
                 {% if form.anxiety_level.errors %}<div class="text-danger small">{{ form.anxiety_level.errors }}</div>{% endif %}
             </div>
 
-            <!-- Energy Level -->
+            <!-- Energy level -->
             <div class="col-md-6">
                 <label class="form-label fw-bold">{{ form.energy_level.label }}</label>
                 <div class="slider-wrap">
@@ -231,7 +227,7 @@
                 </div>
             </div>
 
-            <!-- Social Interaction -->
+            <!-- Social interaction -->
             <div class="col-md-4">
                 <label class="form-label fw-bold">{{ form.social_interaction.label }}</label>
                 {{ form.social_interaction }}
@@ -245,7 +241,7 @@
                 {% if form.appetite_level.errors %}<div class="text-danger small">{{ form.appetite_level.errors }}</div>{% endif %}
             </div>
 
-            <!-- Screen Time -->
+            <!-- Screen time -->
             <div class="col-md-4">
                 <label class="form-label fw-bold">{{ form.screen_time.label }}</label>
                 {{ form.screen_time }}
@@ -253,7 +249,7 @@
                 {% if form.screen_time.errors %}<div class="text-danger small">{{ form.screen_time.errors }}</div>{% endif %}
             </div>
 
-            <!-- Physical Activity -->
+            <!-- Physical activity -->
             <div class="col-md-12">
                 <div class="check-card" id="pa_card">
                     {{ form.physical_activity }}
@@ -268,9 +264,7 @@
     </div>
 </div>
 
-<!-- ════════════════════════════════════════ -->
-<!-- SECTION 3 — DEPRESSION INDICATORS      -->
-<!-- ════════════════════════════════════════ -->
+<!-- Depression signals section -->
 <div class="section-card">
     <div class="section-header" style="background: linear-gradient(135deg,#f093fb,#f5365c);">
         <span>🔍</span> Section 3 — Depression Signals
@@ -347,7 +341,7 @@
 
 {% block extra_scripts %}
 <script>
-// ── Slider sync ──────────────────────────────────────────────────────────
+// Keep slider numbers in sync.
 const sliders = [
     { id: 'mood_slider',          valId: 'mood_val' },
     { id: 'stress_slider',        valId: 'stress_val' },
@@ -366,11 +360,11 @@ sliders.forEach(({ id, valId }) => {
         const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
         slider.style.background = `linear-gradient(to right, #667eea ${pct}%, #e2e8f0 ${pct}%)`;
     };
-    update(); // set initial
+    update();
     slider.addEventListener('input', update);
 });
 
-// ── Checkbox card highlight ──────────────────────────────────────────────
+// Highlight checked cards.
 document.querySelectorAll('.check-card input[type=checkbox]').forEach(cb => {
     const card = cb.closest('.check-card');
     const syncCard = () => card.classList.toggle('checked', cb.checked);
@@ -378,7 +372,7 @@ document.querySelectorAll('.check-card input[type=checkbox]').forEach(cb => {
     cb.addEventListener('change', syncCard);
 });
 
-// ── Physical activity card ───────────────────────────────────────────────
+// Keep the physical activity card highlighted too.
 const pa = document.getElementById('physical_activity');
 if (pa) {
     const paCard = document.getElementById('pa_card');

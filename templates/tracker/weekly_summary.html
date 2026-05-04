@@ -7,7 +7,7 @@
     <p>{{ week_start|date:"F j" }} — {{ week_end|date:"F j, Y" }}</p>
 </div>
 
-<!-- Status Banner -->
+<!-- Status banner -->
 <div class="alert alert-{{ status_color }} d-flex align-items-center gap-3 mb-4">
     <div style="font-size:2rem;">
         {% if week_status == 'Excellent' %}🌟
@@ -20,7 +20,7 @@
     </div>
 </div>
 
-<!-- Stats Row -->
+<!-- Weekly stats -->
 <div class="row g-3 mb-4">
     <div class="col-4 col-md-2">
         <div class="card text-center p-3">
@@ -84,7 +84,7 @@
 </div>
 {% endif %}
 
-<!-- Weekly Table -->
+<!-- Weekly table -->
 <div class="card mb-4">
     <div class="card-header bg-white fw-bold">
         <i class="bi bi-calendar-week me-2 text-primary"></i>Daily Breakdown

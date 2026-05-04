@@ -1,12 +1,4 @@
-"""
-train_model.py — Enhanced ML Training Script
-Features: 14 inputs (basic + psychological + depression indicators)
-Models:   Logistic Regression | Decision Tree | Random Forest (best)
-Target:   stress_category (Low / Medium / High)
-
-Run once before starting Django:
-    python tracker/ml/train_model.py
-"""
+"""Train and save the stress prediction model used by the app."""
 
 import numpy as np
 import pandas as pd
@@ -19,9 +11,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 import pickle
 import os
 
-# ─────────────────────────────────────────────
-# 1. GENERATE SYNTHETIC DATASET (1500 samples)
-# ─────────────────────────────────────────────
+# Build a synthetic dataset for the demo model.
 
 np.random.seed(42)
 N = 1500
@@ -29,23 +19,23 @@ N = 1500
 def generate_dataset(n):
     rows = []
     for _ in range(n):
-        # Basic
+        # Basic day data.
         mood          = np.random.randint(1, 11)
         sleep         = round(np.random.uniform(2, 10), 1)
         work          = round(np.random.uniform(2, 14), 1)
         self_stress   = np.random.randint(1, 11)
 
-        # Mental state
+        # Mental state data.
         anxiety       = np.random.randint(1, 11)
         energy        = np.random.randint(1, 11)
-        social        = np.random.choice([0, 1, 2])   # Low=0 Med=1 High=2
-        appetite      = np.random.choice([0, 1, 2])   # Low=0 Normal=1 High=2
+        social        = np.random.choice([0, 1, 2])
+        appetite      = np.random.choice([0, 1, 2])
         concentration = np.random.randint(1, 11)
         motivation    = np.random.randint(1, 11)
         screen        = round(np.random.uniform(0, 10), 1)
-        physical      = np.random.randint(0, 2)       # 0/1 boolean
+        physical      = np.random.randint(0, 2)
 
-        # Depression indicators (correlated with low mood/high stress)
+        # Make depression signals more likely on low-mood, high-stress days.
         base_dep_prob = max(0, (11 - mood) / 10) * 0.6 + (self_stress / 10) * 0.4
         hopeless      = int(np.random.random() < base_dep_prob * 0.7)
         loss_interest = int(np.random.random() < base_dep_prob * 0.75)
@@ -54,24 +44,24 @@ def generate_dataset(n):
 
         depression_count = hopeless + loss_interest + tired + trouble_sleep
 
-        # ── Stress score formula ─────────────────────────────────────────
+        # Simple scoring formula used to label the synthetic rows.
         score = (
-            (11 - mood)       * 1.8 +   # low mood → high stress
-            (8  - sleep)      * 1.4 +   # low sleep → high stress
-            (work - 6)        * 0.9 +   # overwork → high stress
-            self_stress       * 1.6 +   # self report
-            anxiety           * 1.5 +   # anxiety adds stress
-            (11 - energy)     * 0.8 +   # low energy
-            (2  - social)     * 0.5 +   # low social
+            (11 - mood)       * 1.8 +
+            (8  - sleep)      * 1.4 +
+            (work - 6)        * 0.9 +
+            self_stress       * 1.6 +
+            anxiety           * 1.5 +
+            (11 - energy)     * 0.8 +
+            (2  - social)     * 0.5 +
             (11 - concentration) * 0.4 +
             (11 - motivation) * 0.5 +
-            depression_count  * 2.5 +   # depression indicators spike stress
-            screen            * 0.3 -   # screen time adds a little
-            physical          * 2.0     # exercise reduces stress
+            depression_count  * 2.5 +
+            screen            * 0.3 -
+            physical          * 2.0
         )
-        score += np.random.normal(0, 3)  # noise
+        score += np.random.normal(0, 3)
 
-        # Label thresholds (tuned so ~35% Low, ~40% Medium, ~25% High)
+        # These thresholds keep the classes reasonably balanced.
         if score < 28:
             label = 'Low'
         elif score < 46:
@@ -111,9 +101,7 @@ print("\nClass distribution:")
 print(df['stress_category'].value_counts())
 print(f"\nClass %: {(df['stress_category'].value_counts(normalize=True)*100).round(1).to_dict()}")
 
-# ─────────────────────────────────────────────
-# 2. PREPROCESS
-# ─────────────────────────────────────────────
+# Prepare features and labels.
 
 FEATURE_COLS = [
     'mood_score', 'sleep_hours', 'work_hours', 'self_stress_level',
@@ -126,7 +114,7 @@ FEATURE_COLS = [
 X = df[FEATURE_COLS].values
 y = df['stress_category'].values
 
-# Encode labels: High=0, Low=1, Medium=2 (alphabetical by default)
+# Encode the label strings for scikit-learn.
 le = LabelEncoder()
 le.fit(['Low', 'Medium', 'High'])
 y_enc = le.transform(y)
@@ -138,14 +126,12 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 print(f"\nTrain: {len(X_train)} | Test: {len(X_test)}")
 
-# Scale for Logistic Regression
+# Logistic Regression gets scaled features.
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled  = scaler.transform(X_test)
 
-# ─────────────────────────────────────────────
-# 3. TRAIN & COMPARE 3 MODELS
-# ─────────────────────────────────────────────
+# Compare a few simple model choices.
 
 models = {
     'Logistic Regression': LogisticRegression(max_iter=1000, class_weight='balanced', random_state=42),
@@ -179,9 +165,7 @@ for name, clf in models.items():
     print(f"  Test Accuracy : {acc*100:.2f}%")
     print(f"  CV Accuracy   : {cv*100:.2f}%")
 
-# ─────────────────────────────────────────────
-# 4. BEST MODEL = RANDOM FOREST
-# ─────────────────────────────────────────────
+# Random Forest is the model used by the app.
 
 best_name  = 'Random Forest'
 best_model = results[best_name]['model']
@@ -192,20 +176,18 @@ print(f"BEST MODEL: {best_name}")
 print("=" * 55)
 print(classification_report(y_test, best_pred, target_names=le.classes_))
 
-# Feature importance
+# Print the most useful features.
 importances = best_model.feature_importances_
 print("\nTop Feature Importances:")
 for feat, imp in sorted(zip(FEATURE_COLS, importances), key=lambda x: -x[1])[:8]:
     bar = '█' * int(imp * 60)
     print(f"  {feat:<25} {imp:.4f}  {bar}")
 
-# ─────────────────────────────────────────────
-# 5. SAVE MODEL, ENCODER, SCALER, FEATURE LIST
-# ─────────────────────────────────────────────
+# Save the files that predictor.py loads.
 
 ML_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Save dataset
+# Keep a copy of the generated dataset for inspection.
 df.to_csv(os.path.join(ML_DIR, 'sample_dataset.csv'), index=False)
 
 paths = {
@@ -223,19 +205,16 @@ for filename, obj in paths.items():
 
 print("\n✅ Training complete. You can now run the Django server.")
 
-# ─────────────────────────────────────────────
-# 6. SAMPLE PREDICTIONS (sanity check)
-# ─────────────────────────────────────────────
+# Try a few known-looking examples.
 
 print("\n" + "=" * 55)
 print("SAMPLE PREDICTIONS")
 print("=" * 55)
 
 samples = [
-    # mood,slp,wrk,str,anx,eng,soc,apt,con,mot,scr,phy,hop,loi,ftd,trs
-    [9, 8.0, 4.0, 2,  1, 9, 2, 1, 9, 9, 1.0, 1, 0, 0, 0, 0],  # Expected: Low
-    [5, 6.0, 8.0, 5,  5, 5, 1, 1, 5, 5, 4.0, 0, 1, 0, 1, 0],  # Expected: Medium
-    [2, 3.5, 13, 9,  9, 2, 0, 0, 2, 2, 8.0, 0, 1, 1, 1, 1],  # Expected: High
+    [9, 8.0, 4.0, 2,  1, 9, 2, 1, 9, 9, 1.0, 1, 0, 0, 0, 0],
+    [5, 6.0, 8.0, 5,  5, 5, 1, 1, 5, 5, 4.0, 0, 1, 0, 1, 0],
+    [2, 3.5, 13, 9,  9, 2, 0, 0, 2, 2, 8.0, 0, 1, 1, 1, 1],
 ]
 
 for i, s in enumerate(samples):

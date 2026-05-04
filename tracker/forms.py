@@ -1,17 +1,10 @@
-"""
-forms.py — Enhanced MoodEntryForm with 15 questions in 3 sections.
-Supports both CREATE (new entry) and UPDATE (edit today's entry).
-"""
+"""Forms for auth and daily mood check-ins."""
 
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import MoodEntry, UserProfile
 
-
-# ─────────────────────────────────────────────────────────────
-# AUTH FORMS (unchanged)
-# ─────────────────────────────────────────────────────────────
 
 class UserRegistrationForm(UserCreationForm):
     email      = forms.EmailField(required=True)
@@ -46,12 +39,8 @@ class LoginForm(forms.Form):
     )
 
 
-# ─────────────────────────────────────────────────────────────
-# SLIDER WIDGET HELPER
-# ─────────────────────────────────────────────────────────────
-
 def slider(id_name, min_val=1, max_val=10):
-    """Returns a range-input widget with Bootstrap + custom id."""
+    """Build a Bootstrap range input."""
     return forms.NumberInput(attrs={
         'type':  'range',
         'class': 'form-range',
@@ -62,38 +51,26 @@ def slider(id_name, min_val=1, max_val=10):
     })
 
 
-# ─────────────────────────────────────────────────────────────
-# MAIN MOOD ENTRY FORM — 15 FIELDS
-# ─────────────────────────────────────────────────────────────
-
 class MoodEntryForm(forms.ModelForm):
-    """
-    Comprehensive daily mental health form.
-    Works for both CREATE and UPDATE (pass instance= for edit mode).
-
-    Sections:
-        Section 1 — Basic Health       (4 fields)
-        Section 2 — Mental State       (8 fields)
-        Section 3 — Depression Signals (4 Yes/No fields)
-    """
+    """Daily mental health form used for both new entries and edits."""
 
     class Meta:
         model  = MoodEntry
         fields = [
-            # Section 1
+            # Basic health.
             'mood_score', 'sleep_hours', 'work_hours', 'self_stress_level',
-            # Section 2
+            # Mental state.
             'anxiety_level', 'energy_level', 'social_interaction',
             'appetite_level', 'concentration_level', 'motivation_level',
             'screen_time', 'physical_activity',
-            # Section 3
+            # Depression signals.
             'feeling_hopeless', 'loss_of_interest', 'feeling_tired', 'trouble_sleeping',
-            # Extra
+            # Optional note.
             'notes',
         ]
 
         widgets = {
-            # ── Section 1 ────────────────────────────────────────────────
+            # Basic health widgets.
             'mood_score': slider('mood_slider'),
             'sleep_hours': forms.NumberInput(attrs={
                 'class': 'form-control', 'min': 0, 'max': 24,
@@ -105,7 +82,7 @@ class MoodEntryForm(forms.ModelForm):
             }),
             'self_stress_level': slider('stress_slider'),
 
-            # ── Section 2 ────────────────────────────────────────────────
+            # Mental state widgets.
             'anxiety_level':      slider('anxiety_slider'),
             'energy_level':       slider('energy_slider'),
             'social_interaction': forms.Select(attrs={'class': 'form-select'}),
@@ -118,13 +95,13 @@ class MoodEntryForm(forms.ModelForm):
             }),
             'physical_activity': forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'physical_activity'}),
 
-            # ── Section 3 ────────────────────────────────────────────────
+            # Depression signal widgets.
             'feeling_hopeless':  forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'feeling_hopeless'}),
             'loss_of_interest':  forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'loss_of_interest'}),
             'feeling_tired':     forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'feeling_tired'}),
             'trouble_sleeping':  forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'trouble_sleeping'}),
 
-            # ── Notes ────────────────────────────────────────────────────
+            # Note widget.
             'notes': forms.Textarea(attrs={
                 'class': 'form-control', 'rows': 3,
                 'placeholder': 'Any additional thoughts about today… (optional)',
@@ -132,12 +109,12 @@ class MoodEntryForm(forms.ModelForm):
         }
 
         labels = {
-            # Section 1
+            # Basic health labels.
             'mood_score':       '😊 Overall Mood (1 = very bad, 10 = excellent)',
             'sleep_hours':      '😴 Sleep Hours Last Night',
             'work_hours':       '💼 Work / Study Hours Today',
             'self_stress_level':'🌡️ Self-Reported Stress (1 = calm, 10 = extreme)',
-            # Section 2
+            # Mental state labels.
             'anxiety_level':        '😰 Anxiety Level (1 = none, 10 = severe)',
             'energy_level':         '⚡ Energy Level (1 = exhausted, 10 = very energetic)',
             'social_interaction':   '🤝 Social Interaction Level Today',
@@ -146,16 +123,14 @@ class MoodEntryForm(forms.ModelForm):
             'motivation_level':     '🚀 Motivation Level (1 = none, 10 = highly motivated)',
             'screen_time':          '📱 Recreational Screen Time (hours)',
             'physical_activity':    '🏃 Did you exercise or do physical activity today?',
-            # Section 3
+            # Depression signal labels.
             'feeling_hopeless': '😔 I felt hopeless or worthless today',
             'loss_of_interest': '💔 I lost interest in activities I usually enjoy',
             'feeling_tired':    '😓 I felt tired or fatigued for most of the day',
             'trouble_sleeping': '🌙 I had trouble falling or staying asleep',
-            # Notes
+            # Note label.
             'notes': '📝 Notes (optional)',
         }
-
-    # ── Validation ───────────────────────────────────────────────────────
 
     def clean_mood_score(self):
         v = self.cleaned_data.get('mood_score')

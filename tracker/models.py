@@ -1,8 +1,4 @@
-"""
-models.py — Enhanced Mental Health Monitoring System
-Adds 11 new psychological + depression-indicator fields to MoodEntry.
-PredictionResult now also stores a depression_score.
-"""
+"""Database models for user profiles, daily check-ins, and predictions."""
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -21,22 +17,9 @@ class UserProfile(models.Model):
 
 
 class MoodEntry(models.Model):
-    """
-    Daily mental health data entry — 15 questions across 3 sections.
+    """One daily mental health check-in for a user."""
 
-    Section 1 — Basic Health (4 fields):
-        mood_score, sleep_hours, work_hours, self_stress_level
-
-    Section 2 — Mental State (7 fields):
-        anxiety_level, energy_level, social_interaction,
-        appetite_level, concentration_level, motivation_level,
-        screen_time, physical_activity
-
-    Section 3 — Depression Indicators (4 Yes/No fields):
-        feeling_hopeless, loss_of_interest, feeling_tired, trouble_sleeping
-    """
-
-    # ── Choice constants ─────────────────────────────────────────────────
+    # Choices used by the form and admin.
     SOCIAL_CHOICES = [
         ('Low',    'Low — I mostly stayed alone'),
         ('Medium', 'Medium — Some interaction'),
@@ -49,12 +32,10 @@ class MoodEntry(models.Model):
         ('High',   'High — Overate / stress eating'),
     ]
 
-    # ── Relationship ─────────────────────────────────────────────────────
+    # Owner of the entry.
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mood_entries')
 
-    # ════════════════════════════════════════
-    # SECTION 1 — BASIC HEALTH
-    # ════════════════════════════════════════
+    # Basic health fields.
     mood_score = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)],
         help_text="Overall mood today (1 = very bad, 10 = excellent)"
@@ -72,9 +53,7 @@ class MoodEntry(models.Model):
         help_text="Self-reported stress level (1 = calm, 10 = extreme)"
     )
 
-    # ════════════════════════════════════════
-    # SECTION 2 — MENTAL STATE
-    # ════════════════════════════════════════
+    # Mental state fields.
     anxiety_level = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(10)],
         default=5,
@@ -117,9 +96,7 @@ class MoodEntry(models.Model):
         help_text="Did you do any physical exercise or activity today?"
     )
 
-    # ════════════════════════════════════════
-    # SECTION 3 — DEPRESSION INDICATORS
-    # ════════════════════════════════════════
+    # Depression signal fields.
     feeling_hopeless = models.BooleanField(
         default=False,
         help_text="Did you feel hopeless or worthless today?"
@@ -137,25 +114,25 @@ class MoodEntry(models.Model):
         help_text="Did you have trouble falling or staying asleep?"
     )
 
-    # ── Optional free text ───────────────────────────────────────────────
+    # Optional notes from the user.
     notes = models.TextField(blank=True, help_text="Any additional thoughts about today")
 
-    # ── Timestamps ───────────────────────────────────────────────────────
+    # Dates used for history, edits, and one-entry-per-day checks.
     entry_date = models.DateField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)   # ← tracks edits
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-entry_date']
-        unique_together = ['user', 'entry_date']  # one entry per user per day
+        unique_together = ['user', 'entry_date']
 
     def __str__(self):
         return f"{self.user.username} | {self.entry_date} | Mood:{self.mood_score}"
 
-    # ── Computed helpers ─────────────────────────────────────────────────
+    # Small helpers used by templates and admin.
     @property
     def depression_indicator_count(self):
-        """How many of the 4 depression indicators are True (0–4)."""
+        """Count how many depression signals were checked."""
         return sum([
             self.feeling_hopeless,
             self.loss_of_interest,
@@ -165,15 +142,15 @@ class MoodEntry(models.Model):
 
     @property
     def is_edited(self):
-        """True if the entry was updated after initial creation."""
+        """Return True when the entry was edited after creation."""
         if self.created_at and self.updated_at:
             diff = (self.updated_at - self.created_at).total_seconds()
-            return diff > 5  # more than 5 seconds gap = was edited
+            return diff > 5
         return False
 
 
 class PredictionResult(models.Model):
-    """Stores ML model predictions + depression score for each mood entry."""
+    """Prediction output linked to a daily mood entry."""
 
     LEVEL_CHOICES = [
         ('Low',    'Low'),
@@ -186,14 +163,14 @@ class PredictionResult(models.Model):
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='predictions')
 
-    # ML outputs
+    # Values shown in reports and charts.
     stress_category  = models.CharField(max_length=10, choices=LEVEL_CHOICES)
     burnout_risk     = models.CharField(max_length=10, choices=LEVEL_CHOICES)
     depression_score = models.IntegerField(default=0, help_text="0–4 depression indicator count")
     depression_risk  = models.CharField(max_length=10, choices=LEVEL_CHOICES, default='Low')
     confidence_score = models.FloatField(default=0.0)
 
-    # Pipe-separated recommendation strings
+    # Recommendations are stored as a small pipe-separated list.
     recommendations = models.TextField(blank=True)
 
     predicted_at = models.DateTimeField(auto_now_add=True)

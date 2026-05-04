@@ -1,6 +1,4 @@
-"""
-Django settings for Smart Mental Health Monitoring System v2
-"""
+"""Django settings for the MindTrack project."""
 
 from pathlib import Path
 
