@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MindTrack — Smart Mental Health Monitor{% endblock %}</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #14b8a6;
+            --accent: #f59e0b;
+            --success: #16a34a;
+            --warning: #f59e0b;
+            --danger: #dc2626;
+            --bg: #eef6f8;
+            --card-bg: #ffffff;
+            --text: #162033;
+            --text-muted: #64748b;
+            --surface-soft: #f6fbfc;
+            --line: #dbe7ee;
+            --navy: #0f172a;
+            --primary-rgb: 37, 99, 235;
+            --secondary-rgb: 20, 184, 166;
+            --success-rgb: 22, 163, 74;
+            --warning-rgb: 245, 158, 11;
+            --danger-rgb: 220, 38, 38;
+            --sidebar-w: 240px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── SIDEBAR ───────────────────────────── */
+        .sidebar {
+            position: fixed;
+            top: 0; left: 0;
+            width: var(--sidebar-w);
+            height: 100vh;
+            background: linear-gradient(180deg, var(--navy) 0%, var(--primary-dark) 55%, #0f766e 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            z-index: 1000;
+            box-shadow: 4px 0 20px rgba(15,23,42,0.18);
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .sidebar-brand h5 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-brand span.logo {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-size: 1.4rem;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+            flex: 1;
+        }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left-color: white;
+        }
+
+        .sidebar-nav a i { font-size: 1.1rem; }
+
+        .sidebar-user {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            font-size: 0.85rem;
+        }
+
+        /* ── MAIN CONTENT ───────────────────────── */
+        .main-content {
+            margin-left: var(--sidebar-w);
+            min-height: 100vh;
+            padding: 30px 32px;
+        }
+
+        /* ── CARDS ──────────────────────────────── */
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 2px 20px rgba(15,23,42,0.07);
+            transition: box-shadow 0.2s;
+        }
+
+        .card:hover { box-shadow: 0 4px 30px rgba(15,23,42,0.12); }
+
+        .card-header {
+            border-radius: 16px 16px 0 0 !important;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-weight: 700;
+            padding: 14px 20px;
+        }
+
+        /* ── STAT CARDS ─────────────────────────── */
+        .stat-card {
+            border-radius: 16px;
+            padding: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -20px; right: -20px;
+            width: 80px; height: 80px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .stat-card .icon { font-size: 2rem; opacity: 0.85; }
+        .stat-card .value { font-size: 1.9rem; font-weight: 700; line-height: 1; margin: 6px 0 4px; }
+        .stat-card .label { font-size: 0.8rem; opacity: 0.85; }
+
+        /* ── BADGES ─────────────────────────────── */
+        .stress-badge-Low    { background: #d4edda; color: #155724; border-radius: 6px; padding: 2px 8px; }
+        .stress-badge-Medium { background: #fff3cd; color: #856404; border-radius: 6px; padding: 2px 8px; }
+        .stress-badge-High   { background: #f8d7da; color: #721c24; border-radius: 6px; padding: 2px 8px; }
+
+        /* ── FORMS ──────────────────────────────── */
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid var(--line);
+            padding: 10px 14px;
+            font-family: 'Nunito', sans-serif;
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(var(--primary-rgb),0.14);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            padding: 10px 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(var(--primary-rgb),0.28);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+
+        /* ── ALERTS ─────────────────────────────── */
+        .alert { border: none; border-radius: 12px; font-weight: 600; }
+
+        /* ── RECOMMENDATIONS ────────────────────── */
+        .recommendation-item {
+            background: #f8f0ff;
+            border-left: 4px solid var(--primary);
+            border-radius: 0 10px 10px 0;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
+
+        /* ── TABLE ──────────────────────────────── */
+        .table { border-radius: 12px; overflow: hidden; }
+        .table thead th { background: #f7f7fd; font-weight: 700; border: none; }
+        .table tbody td { vertical-align: middle; border-color: #f0f0f0; }
+
+        /* ── PAGE HEADER ─────────────────────────── */
+        .page-header { margin-bottom: 28px; }
+        .page-header h2 { font-weight: 700; font-size: 1.6rem; color: var(--text); }
+        .page-header p  { color: var(--text-muted); margin: 0; }
+
+        /* ── RESPONSIVE ─────────────────────────── */
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .main-content { margin-left: 0; padding: 16px; }
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <h5><span class="logo">🧠</span> MindTrack</h5>
+        <small style="opacity:0.7;font-size:0.75rem;">Mental Health Monitor v2</small>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="{% url 'dashboard' %}"
+           class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </a>
+        <a href="{% url 'mood_entry' %}"
+           class="{% if request.resolver_match.url_name == 'mood_entry' %}active{% endif %}">
+            <i class="bi bi-plus-circle"></i> Log / Edit Today
+        </a>
+        <a href="{% url 'history' %}"
+           class="{% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+            <i class="bi bi-clock-history"></i> History
+        </a>
+        <a href="{% url 'weekly_summary' %}"
+           class="{% if request.resolver_match.url_name == 'weekly_summary' %}active{% endif %}">
+            <i class="bi bi-bar-chart-line"></i> Weekly Report
+        </a>
+    </nav>
+
+    <div class="sidebar-user">
+        <div style="font-weight:700;">{{ user.get_full_name|default:user.username }}</div>
+        <div style="opacity:0.7;font-size:0.8rem;">{{ user.email }}</div>
+        <a href="{% url 'logout' %}" class="btn btn-sm mt-2"
+           style="background:rgba(255,255,255,0.15);color:white;border:none;border-radius:8px;font-size:0.8rem;">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+    </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+{% else %}
+<div class="container">
+{% endif %}
+
+    <!-- FLASH MESSAGES -->
+    {% if messages %}
+    <div class="mb-3">
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+{% if user.is_authenticated %}
+</div>
+{% else %}
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

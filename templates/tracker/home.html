@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% block title %}MindTrack - Smart Mental Health Monitor{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        overflow-x: hidden;
+    }
+
+    .hero-page {
+        position: relative;
+        width: 100vw;
+        min-height: 100vh;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        overflow: hidden;
+        background: var(--navy);
+        color: #fff;
+    }
+
+    .hero-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(90deg, rgba(15,23,42,0.92) 0%, rgba(30,64,175,0.62) 47%, rgba(15,118,110,0.22) 100%),
+            linear-gradient(180deg, rgba(15,23,42,0.08) 0%, rgba(15,23,42,0.82) 100%);
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        padding: 72px clamp(22px, 7vw, 96px);
+    }
+
+    .hero-copy {
+        max-width: 720px;
+    }
+
+    .brand-mark {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: rgba(255,255,255,0.88);
+        font-weight: 700;
+        margin-bottom: 22px;
+    }
+
+    .brand-mark span {
+        display: inline-grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.22);
+    }
+
+    .hero-copy h1 {
+        font-size: clamp(3rem, 8vw, 6.5rem);
+        line-height: 0.95;
+        font-weight: 800;
+        margin: 0 0 22px;
+    }
+
+    .hero-copy p {
+        max-width: 610px;
+        color: rgba(255,255,255,0.78);
+        font-size: clamp(1.05rem, 2vw, 1.28rem);
+        line-height: 1.7;
+        margin-bottom: 34px;
+    }
+
+    .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .hero-actions .btn {
+        border-radius: 10px;
+        padding: 13px 24px;
+        font-weight: 800;
+        min-width: 150px;
+    }
+
+    .btn-hero-primary {
+        background: var(--secondary);
+        border-color: var(--secondary);
+        color: #052f2b;
+    }
+
+    .btn-hero-primary:hover {
+        background: #2dd4bf;
+        border-color: #2dd4bf;
+        color: #052f2b;
+    }
+
+    .btn-hero-secondary {
+        background: rgba(255,255,255,0.12);
+        border-color: rgba(255,255,255,0.34);
+        color: #fff;
+    }
+
+    .btn-hero-secondary:hover {
+        background: rgba(255,255,255,0.22);
+        border-color: rgba(255,255,255,0.58);
+        color: #fff;
+    }
+
+    .hero-preview {
+        position: absolute;
+        right: clamp(18px, 7vw, 92px);
+        bottom: clamp(18px, 8vh, 76px);
+        z-index: 2;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(80px, 118px));
+        gap: 12px;
+        opacity: 0.92;
+    }
+
+    .metric-tile {
+        min-height: 92px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(16px);
+        padding: 14px;
+    }
+
+    .metric-tile strong {
+        display: block;
+        font-size: 1.5rem;
+        line-height: 1.1;
+    }
+
+    .metric-tile small {
+        color: rgba(255,255,255,0.72);
+        font-weight: 700;
+    }
+
+    @media (max-width: 900px) {
+        .hero-overlay {
+            background: linear-gradient(180deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.78) 100%);
+        }
+
+        .hero-content {
+            align-items: flex-start;
+            padding-top: 68px;
+        }
+
+        .hero-preview {
+            left: 22px;
+            right: 22px;
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 560px) {
+        .hero-actions .btn {
+            width: 100%;
+        }
+
+        .hero-preview {
+            grid-template-columns: 1fr;
+            position: relative;
+            left: auto;
+            right: auto;
+            bottom: auto;
+            margin: -130px 22px 28px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="hero-page">
+    <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
+    <div class="hero-overlay"></div>
+
+    <section class="hero-content">
+        <div class="hero-copy">
+            <div class="brand-mark">
+                <span><i class="bi bi-heart-pulse"></i></span>
+                Smart Mental Health Monitoring
+            </div>
+            <h1>MindTrack</h1>
+            <p>
+                Track mood, sleep, work pressure, and daily stress in one calm dashboard with
+                instant stress prediction and personalised recommendations.
+            </p>
+            <div class="hero-actions">
+                <a href="{% url 'register' %}" class="btn btn-hero-primary">
+                    <i class="bi bi-person-plus me-2"></i>Sign Up
+                </a>
+                <a href="{% url 'login' %}" class="btn btn-hero-secondary">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Login
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <div class="hero-preview" aria-hidden="true">
+        <div class="metric-tile">
+            <strong>8.1</strong>
+            <small>Avg mood</small>
+        </div>
+        <div class="metric-tile">
+            <strong>7.4h</strong>
+            <small>Sleep</small>
+        </div>
+        <div class="metric-tile">
+            <strong>Low</strong>
+            <small>Stress</small>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const canvas = document.getElementById('heroCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = 0;
+    let height = 0;
+    let points = [];
+
+    function resizeCanvas() {
+        const ratio = window.devicePixelRatio || 1;
+        width = canvas.offsetWidth;
+        height = canvas.offsetHeight;
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        points = Array.from({ length: Math.max(34, Math.floor(width / 24)) }, () => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.45,
+            vy: (Math.random() - 0.5) * 0.45,
+            r: 1.5 + Math.random() * 2.6,
+        }));
+    }
+
+    function drawScene() {
+        ctx.clearRect(0, 0, width, height);
+        const css = getComputedStyle(document.documentElement);
+        const navy = css.getPropertyValue('--navy').trim();
+        const primaryRgb = css.getPropertyValue('--primary-rgb').trim();
+        const secondaryRgb = css.getPropertyValue('--secondary-rgb').trim();
+        const dangerRgb = css.getPropertyValue('--danger-rgb').trim();
+
+        ctx.fillStyle = navy;
+        ctx.fillRect(0, 0, width, height);
+
+        const bands = [
+            { y: height * 0.25, color: `rgba(${secondaryRgb},0.18)` },
+            { y: height * 0.48, color: `rgba(${primaryRgb},0.2)` },
+            { y: height * 0.7, color: `rgba(${dangerRgb},0.12)` },
+        ];
+
+        bands.forEach((band, index) => {
+            ctx.beginPath();
+            ctx.moveTo(0, band.y);
+            for (let x = 0; x <= width; x += 24) {
+                const y = band.y + Math.sin((x * 0.012) + performance.now() * 0.00055 + index) * 34;
+                ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = band.color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        });
+
+        points.forEach((point, index) => {
+            point.x += point.vx;
+            point.y += point.vy;
+
+            if (point.x < 0 || point.x > width) point.vx *= -1;
+            if (point.y < 0 || point.y > height) point.vy *= -1;
+
+            for (let j = index + 1; j < points.length; j++) {
+                const other = points[j];
+                const dx = point.x - other.x;
+                const dy = point.y - other.y;
+                const distance = Math.hypot(dx, dy);
+
+                if (distance < 145) {
+                    ctx.strokeStyle = `rgba(255,255,255,${0.12 * (1 - distance / 145)})`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(point.x, point.y);
+                    ctx.lineTo(other.x, other.y);
+                    ctx.stroke();
+                }
+            }
+
+            ctx.fillStyle = 'rgba(255,255,255,0.74)';
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, point.r, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        requestAnimationFrame(drawScene);
+    }
+
+    resizeCanvas();
+    drawScene();
+    window.addEventListener('resize', resizeCanvas);
+</script>
+{% endblock %}

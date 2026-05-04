@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Login - MindTrack{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        overflow-x: hidden;
+    }
+
+    .auth-page {
+        width: 100vw;
+        min-height: 100vh;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 72px 22px;
+        background:
+            radial-gradient(circle at 78% 18%, rgba(var(--secondary-rgb), 0.24), transparent 26%),
+            radial-gradient(circle at 16% 76%, rgba(var(--primary-rgb), 0.22), transparent 30%),
+            linear-gradient(135deg, var(--navy) 0%, var(--primary-dark) 54%, #0f766e 100%);
+        color: #fff;
+    }
+
+    .auth-home {
+        position: fixed;
+        top: 24px;
+        left: 24px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: rgba(255,255,255,0.9);
+        text-decoration: none;
+        font-weight: 800;
+    }
+
+    .auth-home span {
+        display: inline-grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.22);
+    }
+
+    .auth-card {
+        width: min(100%, 430px);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.96);
+        box-shadow: 0 24px 80px rgba(2, 6, 23, 0.34);
+        padding: 34px;
+        color: var(--text);
+    }
+
+    .auth-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        color: #0f766e;
+        background: rgba(var(--secondary-rgb), 0.14);
+        font-size: 1.7rem;
+    }
+
+    .auth-card h3 {
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 8px;
+    }
+
+    .auth-card p {
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .auth-card .form-control {
+        min-height: 48px;
+        border-radius: 8px;
+        border-color: var(--line);
+        background: #fbfdff;
+    }
+
+    .auth-card .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.14);
+    }
+
+    .auth-submit {
+        min-height: 48px;
+        border-radius: 10px;
+        font-weight: 800;
+    }
+
+    .auth-link {
+        color: var(--primary);
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .auth-link:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+
+    @media (max-width: 560px) {
+        .auth-page {
+            align-items: flex-start;
+            padding-top: 92px;
+        }
+
+        .auth-card {
+            padding: 26px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="auth-page">
+    <a href="{% url 'home' %}" class="auth-home">
+        <span><i class="bi bi-heart-pulse"></i></span>
+        MindTrack
+    </a>
+
+    <section class="auth-card">
+        <div class="text-center mb-4">
+            <div class="auth-icon"><i class="bi bi-box-arrow-in-right"></i></div>
+            <h3>Welcome Back</h3>
+            <p class="mb-0">Login to continue your daily check-in.</p>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">Username</label>
+                {{ form.username }}
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">Password</label>
+                {{ form.password }}
+            </div>
+            <button type="submit" class="btn btn-primary auth-submit w-100">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login
+            </button>
+        </form>
+
+        <hr>
+        <p class="text-center mb-0">
+            Don't have an account?
+            <a href="{% url 'register' %}" class="auth-link">Sign up</a>
+        </p>
+    </section>
+</main>
+{% endblock %}

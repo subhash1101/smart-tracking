@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up - MindTrack{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        overflow-x: hidden;
+    }
+
+    .auth-page {
+        width: 100vw;
+        min-height: 100vh;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 72px 22px;
+        background:
+            radial-gradient(circle at 78% 18%, rgba(var(--secondary-rgb), 0.24), transparent 26%),
+            radial-gradient(circle at 16% 76%, rgba(var(--primary-rgb), 0.22), transparent 30%),
+            linear-gradient(135deg, var(--navy) 0%, var(--primary-dark) 54%, #0f766e 100%);
+        color: #fff;
+    }
+
+    .auth-home {
+        position: fixed;
+        top: 24px;
+        left: 24px;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: rgba(255,255,255,0.9);
+        text-decoration: none;
+        font-weight: 800;
+    }
+
+    .auth-home span {
+        display: inline-grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.14);
+        border: 1px solid rgba(255,255,255,0.22);
+    }
+
+    .auth-card {
+        width: min(100%, 540px);
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.96);
+        box-shadow: 0 24px 80px rgba(2, 6, 23, 0.34);
+        padding: 32px;
+        color: var(--text);
+    }
+
+    .auth-icon {
+        display: inline-grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        color: #0f766e;
+        background: rgba(var(--secondary-rgb), 0.14);
+        font-size: 1.7rem;
+    }
+
+    .auth-card h3 {
+        font-weight: 800;
+        color: var(--navy);
+        margin-bottom: 8px;
+    }
+
+    .auth-card p {
+        color: var(--text-muted);
+        font-weight: 600;
+    }
+
+    .auth-card .form-control {
+        min-height: 46px;
+        border-radius: 8px;
+        border-color: var(--line);
+        background: #fbfdff;
+    }
+
+    .auth-card .form-control:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.14);
+    }
+
+    .auth-submit {
+        min-height: 48px;
+        border-radius: 10px;
+        font-weight: 800;
+    }
+
+    .auth-link {
+        color: var(--primary);
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+    .auth-link:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+
+    @media (max-width: 560px) {
+        .auth-page {
+            align-items: flex-start;
+            padding-top: 92px;
+        }
+
+        .auth-card {
+            padding: 26px;
+        }
+
+        .auth-name-row > [class*="col-"] {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="auth-page">
+    <a href="{% url 'home' %}" class="auth-home">
+        <span><i class="bi bi-heart-pulse"></i></span>
+        MindTrack
+    </a>
+
+    <section class="auth-card">
+        <div class="text-center mb-4">
+            <div class="auth-icon"><i class="bi bi-person-plus"></i></div>
+            <h3>Create Account</h3>
+            <p class="mb-0">Start tracking your mental health, one day at a time.</p>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="row auth-name-row">
+                <div class="col-6 mb-3">
+                    <label class="form-label fw-bold">First Name</label>
+                    {{ form.first_name }}
+                </div>
+                <div class="col-6 mb-3">
+                    <label class="form-label fw-bold">Last Name</label>
+                    {{ form.last_name }}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Username</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                <div class="text-danger small mt-1">{{ form.username.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Email</label>
+                {{ form.email }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Password</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                <div class="text-danger small mt-1">{{ form.password1.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Confirm Password</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                <div class="text-danger small mt-1">{{ form.password2.errors }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary auth-submit w-100">
+                <i class="bi bi-person-plus me-2"></i>Sign Up
+            </button>
+        </form>
+
+        <hr>
+        <p class="text-center mb-0">
+            Already have an account?
+            <a href="{% url 'login' %}" class="auth-link">Login</a>
+        </p>
+    </section>
+</main>
+{% endblock %}

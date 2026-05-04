@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% block title %}{% if is_edit %}Edit Today's Entry{% else %}Log Today's Mood{% endif %} — MindTrack{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Section card styling */
+.section-card {
+    border: none;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 16px rgba(102,126,234,0.08);
+    overflow: hidden;
+}
+.section-header {
+    padding: 16px 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+}
+.section-body { padding: 24px; background: white; }
+
+/* Slider styling */
+.slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.slider-wrap input[type=range] {
+    flex: 1;
+    height: 6px;
+    accent-color: #667eea;
+}
+.slider-val {
+    min-width: 38px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: #667eea;
+    background: #f0f4ff;
+    border-radius: 8px;
+    padding: 2px 6px;
+}
+/* Checkbox card */
+.check-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 10px;
+    background: white;
+}
+.check-card:hover { border-color: #667eea; background: #f8f5ff; }
+.check-card input[type=checkbox] { margin-top: 2px; width: 18px; height: 18px; accent-color: #f5365c; }
+.check-card.checked { border-color: #f5365c; background: #fff5f5; }
+.check-label strong { display: block; font-weight: 700; }
+.check-label small { color: #718096; }
+
+/* Edit banner */
+.edit-banner {
+    background: linear-gradient(135deg, #f6d365, #fda085);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #5a3000;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{% if is_edit %}✏️ Edit Today's Entry{% else %}📋 Log Today's Mood{% endif %}</h2>
+    <p>{{ today|date:"l, F j, Y" }}</p>
+</div>
+
+<!-- Edit banner -->
+{% if is_edit %}
+<div class="edit-banner">
+    <span style="font-size:2rem;">✏️</span>
+    <div>
+        <strong>Editing today's entry</strong>
+        <div class="small mt-1">
+            You already submitted an entry today at {{ existing_entry.created_at|time:"g:i A" }}.
+            Update the values below and click <strong>Update My Report</strong> to re-run the analysis.
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<form method="POST" id="moodForm">
+{% csrf_token %}
+
+{% if form.non_field_errors %}
+<div class="alert alert-danger">{{ form.non_field_errors }}</div>
+{% endif %}
+
+<!-- ════════════════════════════════════════ -->
+<!-- SECTION 1 — BASIC HEALTH               -->
+<!-- ════════════════════════════════════════ -->
+<div class="section-card">
+    <div class="section-header" style="background: linear-gradient(135deg,#667eea,#764ba2);">
+        <span>🏥</span> Section 1 — Basic Health
+    </div>
+    <div class="section-body">
+        <div class="row g-4">
+
+            <!-- Mood Score -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold">{{ form.mood_score.label }}</label>
+                <div class="slider-wrap">
+                    <span class="text-muted small">1</span>
+                    {{ form.mood_score }}
+                    <span class="text-muted small">10</span>
+                    <span class="slider-val" id="mood_val">{{ form.mood_score.value|default:5 }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Very Bad 😔</span><span>Excellent 😄</span>
+                </div>
+                {% if form.mood_score.errors %}<div class="text-danger small">{{ form.mood_score.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Self Stress -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold">{{ form.self_stress_level.label }}</label>
+                <div class="slider-wrap">
+                    <span class="text-muted small">1</span>
+                    {{ form.self_stress_level }}
+                    <span class="text-muted small">10</span>
+                    <span class="slider-val" id="stress_val">{{ form.self_stress_level.value|default:5 }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Very Calm 😌</span><span>Extreme 😰</span>
+                </div>
+                {% if form.self_stress_level.errors %}<div class="text-danger small">{{ form.self_stress_level.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Sleep Hours -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold">{{ form.sleep_hours.label }}</label>
+                {{ form.sleep_hours }}
+                <div class="form-text">Recommended: 7–9 hours</div>
+                {% if form.sleep_hours.errors %}<div class="text-danger small">{{ form.sleep_hours.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Work Hours -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold">{{ form.work_hours.label }}</label>
+                {{ form.work_hours }}
+                <div class="form-text">Include classes, office work, assignments</div>
+                {% if form.work_hours.errors %}<div class="text-danger small">{{ form.work_hours.errors }}</div>{% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SECTION 2 — MENTAL STATE               -->
+<!-- ════════════════════════════════════════ -->
+<div class="section-card">
+    <div class="section-header" style="background: linear-gradient(135deg,#43e97b,#38f9d7); color:#1a4731;">
+        <span>🧠</span> Section 2 — Mental State
+    </div>
+    <div class="section-body">
+        <div class="row g-4">
+
+            <!-- Anxiety Level -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold">{{ form.anxiety_level.label }}</label>
+                <div class="slider-wrap">
+                    <span class="text-muted small">1</span>
+                    {{ form.anxiety_level }}
+                    <span class="text-muted small">10</span>
+                    <span class="slider-val" id="anxiety_val">{{ form.anxiety_level.value|default:5 }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>None 😌</span><span>Severe 😱</span>
+                </div>
+                {% if form.anxiety_level.errors %}<div class="text-danger small">{{ form.anxiety_level.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Energy Level -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold">{{ form.energy_level.label }}</label>
+                <div class="slider-wrap">
+                    <span class="text-muted small">1</span>
+                    {{ form.energy_level }}
+                    <span class="text-muted small">10</span>
+                    <span class="slider-val" id="energy_val">{{ form.energy_level.value|default:5 }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Exhausted 😩</span><span>Full of energy ⚡</span>
+                </div>
+                {% if form.energy_level.errors %}<div class="text-danger small">{{ form.energy_level.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Concentration -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold">{{ form.concentration_level.label }}</label>
+                <div class="slider-wrap">
+                    <span class="text-muted small">1</span>
+                    {{ form.concentration_level }}
+                    <span class="text-muted small">10</span>
+                    <span class="slider-val" id="concentration_val">{{ form.concentration_level.value|default:5 }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Can't focus 😵</span><span>Laser focused 🎯</span>
+                </div>
+            </div>
+
+            <!-- Motivation -->
+            <div class="col-md-6">
+                <label class="form-label fw-bold">{{ form.motivation_level.label }}</label>
+                <div class="slider-wrap">
+                    <span class="text-muted small">1</span>
+                    {{ form.motivation_level }}
+                    <span class="text-muted small">10</span>
+                    <span class="slider-val" id="motivation_val">{{ form.motivation_level.value|default:5 }}</span>
+                </div>
+                <div class="d-flex justify-content-between text-muted small">
+                    <span>Zero motivation 😶</span><span>Highly motivated 🚀</span>
+                </div>
+            </div>
+
+            <!-- Social Interaction -->
+            <div class="col-md-4">
+                <label class="form-label fw-bold">{{ form.social_interaction.label }}</label>
+                {{ form.social_interaction }}
+                {% if form.social_interaction.errors %}<div class="text-danger small">{{ form.social_interaction.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Appetite -->
+            <div class="col-md-4">
+                <label class="form-label fw-bold">{{ form.appetite_level.label }}</label>
+                {{ form.appetite_level }}
+                {% if form.appetite_level.errors %}<div class="text-danger small">{{ form.appetite_level.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Screen Time -->
+            <div class="col-md-4">
+                <label class="form-label fw-bold">{{ form.screen_time.label }}</label>
+                {{ form.screen_time }}
+                <div class="form-text">Phone/TV/social media</div>
+                {% if form.screen_time.errors %}<div class="text-danger small">{{ form.screen_time.errors }}</div>{% endif %}
+            </div>
+
+            <!-- Physical Activity -->
+            <div class="col-md-12">
+                <div class="check-card" id="pa_card">
+                    {{ form.physical_activity }}
+                    <div class="check-label">
+                        <strong>{{ form.physical_activity.label }}</strong>
+                        <small>Any walk, gym, yoga, sports, or exercise counts</small>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════ -->
+<!-- SECTION 3 — DEPRESSION INDICATORS      -->
+<!-- ════════════════════════════════════════ -->
+<div class="section-card">
+    <div class="section-header" style="background: linear-gradient(135deg,#f093fb,#f5365c);">
+        <span>🔍</span> Section 3 — Depression Signals
+        <span class="ms-auto small" style="font-weight:400; opacity:0.9;">Tick all that apply today</span>
+    </div>
+    <div class="section-body">
+        <p class="text-muted small mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            These questions help detect early signs of depression. Your answers are private and used only for your personalised recommendations.
+        </p>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="check-card" id="card_hopeless">
+                    {{ form.feeling_hopeless }}
+                    <div class="check-label">
+                        <strong>{{ form.feeling_hopeless.label }}</strong>
+                        <small>Felt worthless, helpless, or that nothing matters</small>
+                    </div>
+                </label>
+            </div>
+            <div class="col-md-6">
+                <label class="check-card" id="card_interest">
+                    {{ form.loss_of_interest }}
+                    <div class="check-label">
+                        <strong>{{ form.loss_of_interest.label }}</strong>
+                        <small>Activities that used to bring joy felt empty</small>
+                    </div>
+                </label>
+            </div>
+            <div class="col-md-6">
+                <label class="check-card" id="card_tired">
+                    {{ form.feeling_tired }}
+                    <div class="check-label">
+                        <strong>{{ form.feeling_tired.label }}</strong>
+                        <small>Persistent fatigue even without heavy activity</small>
+                    </div>
+                </label>
+            </div>
+            <div class="col-md-6">
+                <label class="check-card" id="card_sleep">
+                    {{ form.trouble_sleeping }}
+                    <div class="check-label">
+                        <strong>{{ form.trouble_sleeping.label }}</strong>
+                        <small>Insomnia, restless sleep, or waking too early</small>
+                    </div>
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notes -->
+<div class="card mb-4" style="border:none; border-radius:16px; box-shadow:0 2px 16px rgba(102,126,234,0.08);">
+    <div class="card-body">
+        <label class="form-label fw-bold">{{ form.notes.label }}</label>
+        {{ form.notes }}
+    </div>
+</div>
+
+<!-- Submit -->
+<div class="d-grid">
+    <button type="submit" class="btn btn-primary btn-lg py-3">
+        <i class="bi bi-cpu me-2"></i>
+        {% if is_edit %}Update My Report 🔄{% else %}Analyse & Get Report 🔮{% endif %}
+    </button>
+</div>
+<p class="text-center text-muted small mt-3">
+    <i class="bi bi-shield-lock me-1"></i>
+    Your responses are private and stored securely on this device only.
+</p>
+
+</form>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// ── Slider sync ──────────────────────────────────────────────────────────
+const sliders = [
+    { id: 'mood_slider',          valId: 'mood_val' },
+    { id: 'stress_slider',        valId: 'stress_val' },
+    { id: 'anxiety_slider',       valId: 'anxiety_val' },
+    { id: 'energy_slider',        valId: 'energy_val' },
+    { id: 'concentration_slider', valId: 'concentration_val' },
+    { id: 'motivation_slider',    valId: 'motivation_val' },
+];
+
+sliders.forEach(({ id, valId }) => {
+    const slider = document.getElementById(id);
+    const display = document.getElementById(valId);
+    if (!slider || !display) return;
+    const update = () => {
+        display.textContent = slider.value;
+        const pct = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+        slider.style.background = `linear-gradient(to right, #667eea ${pct}%, #e2e8f0 ${pct}%)`;
+    };
+    update(); // set initial
+    slider.addEventListener('input', update);
+});
+
+// ── Checkbox card highlight ──────────────────────────────────────────────
+document.querySelectorAll('.check-card input[type=checkbox]').forEach(cb => {
+    const card = cb.closest('.check-card');
+    const syncCard = () => card.classList.toggle('checked', cb.checked);
+    syncCard();
+    cb.addEventListener('change', syncCard);
+});
+
+// ── Physical activity card ───────────────────────────────────────────────
+const pa = document.getElementById('physical_activity');
+if (pa) {
+    const paCard = document.getElementById('pa_card');
+    const sync = () => paCard.classList.toggle('checked', pa.checked);
+    sync();
+    pa.addEventListener('change', sync);
+}
+</script>
+{% endblock %}

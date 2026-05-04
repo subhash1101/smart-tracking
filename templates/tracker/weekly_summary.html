@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Weekly Report — MindTrack{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>Weekly Summary</h2>
+    <p>{{ week_start|date:"F j" }} — {{ week_end|date:"F j, Y" }}</p>
+</div>
+
+<!-- Status Banner -->
+<div class="alert alert-{{ status_color }} d-flex align-items-center gap-3 mb-4">
+    <div style="font-size:2rem;">
+        {% if week_status == 'Excellent' %}🌟
+        {% elif week_status == 'Moderate' %}⚡
+        {% else %}⚠️{% endif %}
+    </div>
+    <div>
+        <strong>Overall Week: {{ week_status }}</strong>
+        <div class="small mt-1">Based on {{ entry_count }}/7 entries this week</div>
+    </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+    <div class="col-4 col-md-2">
+        <div class="card text-center p-3">
+            <div>😊</div>
+            <div class="fw-bold fs-5" style="color:#667eea;">{{ avg_data.avg_mood|default:"—"|floatformat:1 }}</div>
+            <div class="text-muted" style="font-size:.75rem;">Avg Mood</div>
+        </div>
+    </div>
+    <div class="col-4 col-md-2">
+        <div class="card text-center p-3">
+            <div>😴</div>
+            <div class="fw-bold fs-5" style="color:#43e97b;">{{ avg_data.avg_sleep|default:"—"|floatformat:1 }}h</div>
+            <div class="text-muted" style="font-size:.75rem;">Avg Sleep</div>
+        </div>
+    </div>
+    <div class="col-4 col-md-2">
+        <div class="card text-center p-3">
+            <div>💼</div>
+            <div class="fw-bold fs-5" style="color:#f5365c;">{{ avg_data.avg_work|default:"—"|floatformat:1 }}h</div>
+            <div class="text-muted" style="font-size:.75rem;">Avg Work</div>
+        </div>
+    </div>
+    <div class="col-4 col-md-2">
+        <div class="card text-center p-3">
+            <div>😰</div>
+            <div class="fw-bold fs-5" style="color:#f093fb;">{{ avg_data.avg_anxiety|default:"—"|floatformat:1 }}</div>
+            <div class="text-muted" style="font-size:.75rem;">Avg Anxiety</div>
+        </div>
+    </div>
+    <div class="col-4 col-md-2">
+        <div class="card text-center p-3">
+            <div>⚡</div>
+            <div class="fw-bold fs-5" style="color:#38f9d7;">{{ avg_data.avg_energy|default:"—"|floatformat:1 }}</div>
+            <div class="text-muted" style="font-size:.75rem;">Avg Energy</div>
+        </div>
+    </div>
+    <div class="col-4 col-md-2">
+        <div class="card text-center p-3">
+            <div>🔴</div>
+            <div class="fw-bold fs-5" style="color:#f6a623;">{{ high_stress_days }}</div>
+            <div class="text-muted" style="font-size:.75rem;">High Stress Days</div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts -->
+{% if high_dep_days >= 3 %}
+<div class="alert alert-danger">
+    <strong>⚠️ Depression Alert:</strong>
+    You showed high depression signals on {{ high_dep_days }} day(s) this week.
+    Please consider speaking with a mental health professional or counselor.
+    <br><strong>Helpline (India):</strong> VANDREVALA Foundation — 1860-2662-345 (24/7, free)
+</div>
+{% endif %}
+
+{% if burnout_days >= 3 %}
+<div class="alert alert-warning">
+    <strong>🔥 Burnout Warning:</strong>
+    High burnout risk detected on {{ burnout_days }} day(s) this week.
+    Schedule at least one complete rest day this week.
+</div>
+{% endif %}
+
+<!-- Weekly Table -->
+<div class="card mb-4">
+    <div class="card-header bg-white fw-bold">
+        <i class="bi bi-calendar-week me-2 text-primary"></i>Daily Breakdown
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0" style="font-size:.85rem;">
+            <thead>
+                <tr>
+                    <th>Day</th><th>Mood</th><th>Anxiety</th><th>Energy</th>
+                    <th>Sleep</th><th>Work</th><th>Stress</th><th>Burnout</th><th>Depression</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in entries %}
+                <tr>
+                    <td class="fw-bold">{{ entry.entry_date|date:"D, M j" }}</td>
+                    <td>{{ entry.mood_score }}/10</td>
+                    <td>{{ entry.anxiety_level }}/10</td>
+                    <td>{{ entry.energy_level }}/10</td>
+                    <td>{{ entry.sleep_hours }}h</td>
+                    <td>{{ entry.work_hours }}h</td>
+                    <td>
+                        {% if entry.prediction %}
+                        <span class="badge stress-badge-{{ entry.prediction.stress_category }}">{{ entry.prediction.stress_category }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if entry.prediction %}
+                        <span class="badge stress-badge-{{ entry.prediction.burnout_risk }}">{{ entry.prediction.burnout_risk }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if entry.prediction %}
+                        <span class="badge stress-badge-{{ entry.prediction.depression_risk }}">
+                            {{ entry.prediction.depression_risk }} ({{ entry.prediction.depression_score }}/4)
+                        </span>
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center text-muted py-4">No entries this week yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="d-flex gap-3">
+    <a href="{% url 'dashboard' %}" class="btn btn-primary"><i class="bi bi-speedometer2 me-2"></i>Dashboard</a>
+    <a href="{% url 'history' %}" class="btn btn-outline-primary"><i class="bi bi-clock-history me-2"></i>History</a>
+</div>
+{% endblock %}

@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — MindTrack{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header d-flex justify-content-between align-items-start">
+    <div>
+        <h2>Your Dashboard</h2>
+        <p>{{ today|date:"l, F j, Y" }}</p>
+    </div>
+    <a href="{% url 'mood_entry' %}" class="btn btn-primary">
+        {% if today_entry %}
+        <i class="bi bi-pencil me-2"></i>Edit Today's Entry
+        {% else %}
+        <i class="bi bi-plus-circle me-2"></i>Log Today's Mood
+        {% endif %}
+    </a>
+</div>
+
+<!-- STAT CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md">
+        <div class="stat-card" style="background:linear-gradient(135deg,#667eea,#764ba2);">
+            <div class="icon">😊</div>
+            <div class="value">{{ avg_mood|default:"—" }}</div>
+            <div class="label">Avg Mood (7d)</div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        <div class="stat-card" style="background:linear-gradient(135deg,#43e97b,#38f9d7);">
+            <div class="icon">😴</div>
+            <div class="value">{{ avg_sleep|default:"—" }}h</div>
+            <div class="label">Avg Sleep (7d)</div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        <div class="stat-card" style="background:linear-gradient(135deg,#f093fb,#f5365c);">
+            <div class="icon">😰</div>
+            <div class="value">{{ avg_anxiety|default:"—" }}</div>
+            <div class="label">Avg Anxiety (7d)</div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        <div class="stat-card" style="background:linear-gradient(135deg,#f6d365,#fda085);">
+            <div class="icon">⚡</div>
+            <div class="value">{{ avg_energy|default:"—" }}</div>
+            <div class="label">Avg Energy (7d)</div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
+        {% if today_entry and today_entry.prediction %}
+        <div class="stat-card
+            {% if today_entry.prediction.stress_category == 'Low' %}"
+             style="background:linear-gradient(135deg,#43e97b,#38f9d7);">
+            {% elif today_entry.prediction.stress_category == 'Medium' %}"
+             style="background:linear-gradient(135deg,#f6d365,#fda085); color:#5a3000">
+            {% else %}"
+             style="background:linear-gradient(135deg,#f5365c,#e11d48);">
+            {% endif %}
+            <div class="icon">🔮</div>
+            <div class="value">{{ today_entry.prediction.stress_category }}</div>
+            <div class="label">Today's Stress</div>
+        </div>
+        {% else %}
+        <div class="stat-card" style="background:linear-gradient(135deg,#a0aec0,#718096);">
+            <div class="icon">🔮</div>
+            <div class="value">—</div>
+            <div class="label">Today's Stress</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- CHARTS ROW 1 -->
+<div class="row g-3 mb-3">
+    <!-- Mood & Stress 7-day -->
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header bg-white"><i class="bi bi-graph-up me-2 text-primary"></i><strong>Mood & Stress — 7 Days</strong></div>
+            <div class="card-body"><canvas id="moodStressChart" height="130"></canvas></div>
+        </div>
+    </div>
+    <!-- Stress Pie -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-white"><i class="bi bi-pie-chart me-2 text-primary"></i><strong>Stress Distribution (30d)</strong></div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <canvas id="stressPie" style="max-height:180px;"></canvas>
+                <div class="mt-2 d-flex gap-3 justify-content-center" style="font-size:.82rem;">
+                    <span><span class="badge" style="background:#43e97b;">Low</span> {{ stress_counts.Low }}</span>
+                    <span><span class="badge" style="background:#f6a623;">Med</span> {{ stress_counts.Medium }}</span>
+                    <span><span class="badge" style="background:#f5365c;">High</span> {{ stress_counts.High }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CHARTS ROW 2 -->
+<div class="row g-3 mb-4">
+    <!-- Anxiety & Energy 7-day -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white"><i class="bi bi-activity me-2 text-primary"></i><strong>Anxiety & Energy — 7 Days</strong></div>
+            <div class="card-body"><canvas id="anxietyEnergyChart" height="130"></canvas></div>
+        </div>
+    </div>
+    <!-- Sleep bar -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white"><i class="bi bi-moon-stars me-2 text-primary"></i><strong>Sleep Hours — 7 Days</strong></div>
+            <div class="card-body"><canvas id="sleepChart" height="130"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- Depression Pie + Recent Table -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card h-100">
+            <div class="card-header bg-white"><i class="bi bi-heart-pulse me-2 text-danger"></i><strong>Depression Risk (30d)</strong></div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <canvas id="depPie" style="max-height:160px;"></canvas>
+                <div class="mt-2 d-flex flex-column gap-1 align-items-center" style="font-size:.82rem;">
+                    <span><span class="badge" style="background:#43e97b;">Low</span> {{ dep_counts.Low }}</span>
+                    <span><span class="badge" style="background:#f6a623;">Med</span> {{ dep_counts.Medium }}</span>
+                    <span><span class="badge" style="background:#f5365c;">High</span> {{ dep_counts.High }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between">
+                <span><i class="bi bi-clock-history me-2 text-primary"></i><strong>Recent Entries</strong></span>
+                <a href="{% url 'history' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0" style="font-size:.88rem;">
+                    <thead>
+                        <tr>
+                            <th>Date</th><th>Mood</th><th>Anxiety</th><th>Energy</th>
+                            <th>Sleep</th><th>Stress</th><th>Burnout</th><th>Depression</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in recent_entries %}
+                        <tr>
+                            <td>{{ entry.entry_date|date:"M j" }}</td>
+                            <td><strong>{{ entry.mood_score }}</strong>/10</td>
+                            <td>{{ entry.anxiety_level }}/10</td>
+                            <td>{{ entry.energy_level }}/10</td>
+                            <td>{{ entry.sleep_hours }}h</td>
+                            <td>
+                                {% if entry.prediction %}
+                                <span class="badge stress-badge-{{ entry.prediction.stress_category }}">{{ entry.prediction.stress_category }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% if entry.prediction %}
+                                <span class="badge stress-badge-{{ entry.prediction.burnout_risk }}">{{ entry.prediction.burnout_risk }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% if entry.prediction %}
+                                <span class="badge stress-badge-{{ entry.prediction.depression_risk }}">{{ entry.prediction.depression_risk }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8" class="text-center text-muted py-4">
+                            No entries yet. <a href="{% url 'mood_entry' %}">Log your first mood!</a>
+                        </td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const labels      = {{ chart_labels|safe }};
+const moodData    = {{ mood_data|safe }};
+const stressData  = {{ stress_data|safe }};
+const sleepData   = {{ sleep_data|safe }};
+const anxietyData = {{ anxiety_data|safe }};
+const energyData  = {{ energy_data|safe }};
+
+const lineOpts = (datasets) => ({
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+        responsive: true,
+        scales: {
+            y: { min:1, max:10, ticks:{stepSize:1}, grid:{color:'#f0f0f0'} },
+            x: { grid:{display:false} }
+        },
+        plugins: { legend: { position:'top' } },
+        elements: { line:{tension:0.4}, point:{radius:5} }
+    }
+});
+
+// Mood & Stress chart
+new Chart(document.getElementById('moodStressChart').getContext('2d'), lineOpts([
+    { label:'Mood', data:moodData, borderColor:'#667eea', backgroundColor:'rgba(102,126,234,0.08)', fill:true, pointBackgroundColor:'#667eea', spanGaps:true },
+    { label:'Stress (self)', data:stressData, borderColor:'#f5365c', backgroundColor:'rgba(245,54,92,0.05)', fill:true, pointBackgroundColor:'#f5365c', spanGaps:true },
+]));
+
+// Anxiety & Energy chart
+new Chart(document.getElementById('anxietyEnergyChart').getContext('2d'), lineOpts([
+    { label:'Anxiety', data:anxietyData, borderColor:'#f093fb', backgroundColor:'rgba(240,147,251,0.08)', fill:true, pointBackgroundColor:'#f093fb', spanGaps:true },
+    { label:'Energy',  data:energyData,  borderColor:'#43e97b', backgroundColor:'rgba(67,233,123,0.08)', fill:true,  pointBackgroundColor:'#43e97b', spanGaps:true },
+]));
+
+// Sleep bar
+new Chart(document.getElementById('sleepChart').getContext('2d'), {
+    type:'bar',
+    data:{ labels, datasets:[{
+        label:'Sleep Hours',
+        data: sleepData,
+        backgroundColor: sleepData.map(v =>
+            v===null?'rgba(200,200,200,0.3)': v<6?'rgba(245,54,92,0.7)': v<7?'rgba(246,163,35,0.7)':'rgba(67,233,123,0.7)'
+        ),
+        borderRadius:8, spanGaps:true,
+    }]},
+    options:{ responsive:true, scales:{ y:{min:0,max:12,ticks:{stepSize:2},grid:{color:'#f0f0f0'}}, x:{grid:{display:false}} }, plugins:{legend:{display:false}} }
+});
+
+// Stress pie
+new Chart(document.getElementById('stressPie').getContext('2d'), {
+    type:'doughnut',
+    data:{ labels:['Low','Medium','High'], datasets:[{ data:{{ stress_pie_data|safe }}, backgroundColor:['#43e97b','#f6a623','#f5365c'], borderWidth:0 }] },
+    options:{ cutout:'65%', plugins:{legend:{display:false}} }
+});
+
+// Depression pie
+new Chart(document.getElementById('depPie').getContext('2d'), {
+    type:'doughnut',
+    data:{ labels:['Low','Medium','High'], datasets:[{ data:{{ dep_pie_data|safe }}, backgroundColor:['#43e97b','#f6a623','#f5365c'], borderWidth:0 }] },
+    options:{ cutout:'65%', plugins:{legend:{display:false}} }
+});
+</script>
+{% endblock %}

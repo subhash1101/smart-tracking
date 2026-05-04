@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}History — MindTrack{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div><h2>Mood History</h2><p>All your mental health entries</p></div>
+    <a href="{% url 'mood_entry' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus me-1"></i>Log / Edit Today
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" style="font-size:.85rem;">
+                <thead>
+                    <tr>
+                        <th>Date</th><th>Mood</th><th>Sleep</th><th>Work</th>
+                        <th>Anxiety</th><th>Energy</th><th>Stress (ML)</th>
+                        <th>Burnout</th><th>Depression</th><th>Dep. Score</th><th>Edited</th><th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in entries %}
+                    <tr>
+                        <td class="fw-bold">{{ entry.entry_date|date:"M j, Y" }}</td>
+                        <td>
+                            {% if entry.mood_score >= 8 %}😊
+                            {% elif entry.mood_score >= 5 %}😐
+                            {% else %}😔{% endif %}
+                            {{ entry.mood_score }}/10
+                        </td>
+                        <td>{{ entry.sleep_hours }}h</td>
+                        <td>{{ entry.work_hours }}h</td>
+                        <td>{{ entry.anxiety_level }}/10</td>
+                        <td>{{ entry.energy_level }}/10</td>
+                        <td>
+                            {% if entry.prediction %}
+                            <span class="badge stress-badge-{{ entry.prediction.stress_category }}">
+                                {{ entry.prediction.stress_category }}
+                            </span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if entry.prediction %}
+                            <span class="badge stress-badge-{{ entry.prediction.burnout_risk }}">
+                                {{ entry.prediction.burnout_risk }}
+                            </span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if entry.prediction %}
+                            <span class="badge stress-badge-{{ entry.prediction.depression_risk }}">
+                                {{ entry.prediction.depression_risk }}
+                            </span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if entry.prediction %}
+                            <span class="badge bg-secondary">
+                                {{ entry.prediction.depression_score }}/4
+                            </span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            {% if entry.is_edited %}
+                            <span class="badge bg-warning text-dark">✏️</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if entry.prediction %}
+                            <a href="{% url 'result' entry.prediction.pk %}" class="btn btn-xs btn-outline-primary" style="font-size:.78rem;padding:2px 8px;">
+                                View
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="text-center text-muted py-5">
+                            <div style="font-size:3rem;">📭</div>
+                            <p>No entries yet. <a href="{% url 'mood_entry' %}">Log your first mood!</a></p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
